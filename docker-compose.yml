@@ -1,4 +1,6 @@
-
+#-------------------Заимствование(поменял только юзера, пароль, название дб и тд)----------------------
+#https://www.warp.dev/terminus/postgres-docker-compose
+#https://hub.docker.com/_/postgres
 services:
   db:
     image: postgres:15
@@ -8,22 +10,11 @@ services:
       POSTGRES_USER: taskuser
       POSTGRES_PASSWORD: taskpassword
       POSTGRES_DB: taskdb
-    ports:
+    ports:      
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: taskmanager_pgadmin
-    restart: always
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-    ports:
-      - "5050:80"
-    depends_on:
-      - db
-
 volumes:
   postgres_data:
+#-------------------Заимствование----------------------

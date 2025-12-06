@@ -1,10 +1,8 @@
 # app/storage.py
 import os
-import bcrypt
 from datetime import datetime
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, ForeignKey, func
 from sqlalchemy.orm import sessionmaker, declarative_base, relationship
-
 DATABASE_URL = os.environ.get(
     "DATABASE_URL",
     "postgresql+psycopg2://taskuser:taskpassword@localhost:5432/taskdb"
@@ -12,6 +10,33 @@ DATABASE_URL = os.environ.get(
 
 
 Base = declarative_base()
+
+
+
+class EmptyUsernameError(Exception):
+    """Логин не указан"""
+    pass
+
+
+class EmptyPasswordError(Exception):
+    """Пароль пустой"""
+    pass
+
+
+class UserAlreadyExistsError(Exception):
+    """Пользователь с таким логином уже существует"""
+    pass
+
+
+class UserNotFoundError(Exception):
+    """Пользователь не найден"""
+    pass
+
+
+class WrongPasswordError(Exception):
+    """Пароль не совпадает"""
+    pass
+
 
 
 class User(Base):
@@ -36,7 +61,6 @@ class Task(Base):
 
     user = relationship("User", back_populates="tasks")
 
-
 class Storage:
     def __init__(self):
         self.engine = create_engine(DATABASE_URL, future=True)
@@ -46,16 +70,23 @@ class Storage:
         self.current_user = None
 
     # -------------------- АВТОРИЗАЦИЯ ------------------------
+        
 
     def register_user(self, username: str, password: str) -> bool:
+        username = username.strip()
+
+        if not username:
+            raise EmptyUsernameError("Имя пользователя не может быть пустым")
+
+        if not password:
+            raise EmptyPasswordError("Пароль не может быть пустым")
+
         with self.SessionLocal() as session:
             exists = session.query(User).filter_by(username=username).first()
             if exists:
-                return False
+                raise UserAlreadyExistsError(f"Пользователь '{username}' уже существует")
 
-            password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-
-            user = User(username=username, password_hash=password_hash)
+            user = User(username=username, password_hash=password)
             session.add(user)
             session.commit()
             return True
@@ -66,8 +97,9 @@ class Storage:
             if not user:
                 return False
 
-            if bcrypt.checkpw(password.encode(), user.password_hash.encode()):
+            if password == user.password_hash:
                 return True
+
 
             return False
 
@@ -108,7 +140,7 @@ class Storage:
 
             for r in rows:
                 r.completed = True
-                r.completed_at = datetime.utcnow()
+                r.completed_at = datetime()
 
             session.commit()
 

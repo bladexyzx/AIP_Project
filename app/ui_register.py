@@ -1,17 +1,40 @@
-# app/ui_register.py
 from PyQt6.QtWidgets import QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QMessageBox
-from .storage import Storage
+from .storage import Storage, EmptyPasswordError, UserAlreadyExistsError
+
 
 class RegisterWindow(QWidget):
+    """
+    Окно регистрации нового пользователя.
+    Предоставляет интерфейс для создания аккаунта с логином и паролем.
+
+    :ivar storage: Хранилище данных, используемое для регистрации пользователей.
+    :type storage: Storage
+    :ivar label: Текстовая инструкция для пользователя.
+    :type label: QLabel
+    :ivar username_input: Поле ввода логина.
+    :type username_input: QLineEdit
+    :ivar password_input: Поле ввода пароля.
+    :type password_input: QLineEdit
+    :ivar button: Кнопка для отправки данных регистрации.
+    :type button: QPushButton
+    """
     def __init__(self):
-        super().__init__()
+        """
+        Инициализирует окно регистрации и настраивает интерфейс.
+        Устанавливает заголовок, размеры окна и создаёт элементы управления.
+        """
+        QWidget.__init__(self)
         self.setWindowTitle("Регистрация")
-        self.resize(300, 250)
+        self.resize(250, 200)
         self.storage = Storage()
 
         self.init_ui()
 
     def init_ui(self):
+        """
+        Создаёт и размещает элементы интерфейса окна регистрации.
+        Настраивает поля для ввода логина и пароля, а также кнопку регистрации.
+        """
         self.label = QLabel("Создайте аккаунт")
 
         self.username_input = QLineEdit()
@@ -33,18 +56,33 @@ class RegisterWindow(QWidget):
         self.setLayout(layout)
 
     def register(self):
+        """
+        Выполняет регистрацию нового пользователя.
+        Проверяет корректность введённых данных, обрабатывает ошибки и уведомляет пользователя о результате.
+
+        :raises EmptyPasswordError: если введён пустой пароль.
+        :raises UserAlreadyExistsError: если пользователь с таким логином уже существует.
+        """
         username = self.username_input.text().strip()
         password = self.password_input.text().strip()
 
         if not username or not password:
-            QMessageBox.warning(self, "Ошибка", "Введите логин и пароль")
+            QMessageBox.warning(self, "Ошибка", "Введите логин и/или пароль")
             return
 
-        success = self.storage.register_user(username, password)
+        try:
+            self.storage.register_user(username, password)
 
-        if not success:
-            QMessageBox.warning(self, "Ошибка", "Пользователь уже существует")
+        except EmptyPasswordError as err:
+            QMessageBox.warning(self, "Ошибка", str(err))
             return
 
-        QMessageBox.information(self, "Успех", "Регистрация прошла успешно!")
-        self.close()
+        except UserAlreadyExistsError as err:
+            QMessageBox.warning(self, "Ошибка", str(err))
+            return
+
+        else:
+            QMessageBox.information(self, "Успех", "Регистрация прошла успешно!")
+            self.close()
+
+    

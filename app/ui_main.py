@@ -2,9 +2,9 @@ from PyQt6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QListWidget, QLin
 
 class MainWindow(QWidget):
     def __init__(self, storage):
-        super().__init__()
+        QWidget.__init__(self)
         self.storage = storage
-        self.setWindowTitle(f"Task Manager — {storage.current_user}")
+        self.setWindowTitle(f"Task Manager - {storage.current_user}")
         self.resize(500, 500)
         self.init_ui()
         self.load_tasks()
